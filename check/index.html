@@ -332,6 +332,7 @@ function buildFilters(){
     activeParty = btn.getAttribute('data-party') || null;
     partyEl.querySelectorAll('.fbtn').forEach(b => b.classList.toggle('active', b === btn));
     render(document.getElementById('q').value);
+    syncUrlState();
   });
   landEl.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-land]');
@@ -339,6 +340,7 @@ function buildFilters(){
     activeLand = btn.getAttribute('data-land') || null;
     landEl.querySelectorAll('.fbtn').forEach(b => b.classList.toggle('active', b === btn));
     render(document.getElementById('q').value);
+    syncUrlState();
   });
 }
 function applyFilters(rows){
@@ -430,17 +432,103 @@ function escapeAttr(s){
   return escapeHtml(s).replace(/`/g,'');
 }
 const input = document.getElementById('q');
+const SCROLL_KEY = 'organspende-check-scroll';
 let t = null;
+let restoreScrollY = null;
+
+function syncUrlState(){
+  const params = new URLSearchParams();
+  const q = (input.value || '').trim();
+  if (q) params.set('q', q);
+  if (activeParty) params.set('p', activeParty);
+  if (activeLand) params.set('l', activeLand);
+  const qs = params.toString();
+  const next = qs ? (location.pathname + '?' + qs) : location.pathname;
+  const cur = location.pathname + location.search;
+  if (next !== cur) history.replaceState(null, '', next);
+}
+
+function applyFilterButtons(){
+  const partyEl = document.getElementById('partyFilters');
+  const landEl = document.getElementById('landFilters');
+  if (partyEl) {
+    partyEl.querySelectorAll('.fbtn').forEach(b => {
+      const v = b.getAttribute('data-party') || '';
+      b.classList.toggle('active', (activeParty || '') === v);
+    });
+  }
+  if (landEl) {
+    landEl.querySelectorAll('.fbtn').forEach(b => {
+      const v = b.getAttribute('data-land') || '';
+      b.classList.toggle('active', (activeLand || '') === v);
+    });
+  }
+}
+
+function readUrlState(){
+  const params = new URLSearchParams(location.search);
+  const q = params.get('q') || '';
+  const p = params.get('p') || '';
+  const l = params.get('l') || '';
+  input.value = q;
+  activeParty = p || null;
+  activeLand = l || null;
+}
+
+function scrollStorageKey(){
+  // Bind to path+query so a temporary same-file navigation does not overwrite.
+  return SCROLL_KEY + ':' + location.pathname + location.search;
+}
+
+function saveScroll(){
+  try { sessionStorage.setItem(scrollStorageKey(), String(window.scrollY || 0)); } catch (e) {}
+}
+
+function restoreScroll(){
+  let y = restoreScrollY;
+  if (y == null) {
+    try {
+      const raw = sessionStorage.getItem(scrollStorageKey());
+      if (raw != null && raw !== '') y = parseInt(raw, 10);
+    } catch (e) {}
+  }
+  if (y == null || !isFinite(y) || y < 0) return;
+  restoreScrollY = y;
+  const apply = () => { window.scrollTo(0, y); };
+  requestAnimationFrame(() => {
+    apply();
+    requestAnimationFrame(apply);
+    setTimeout(apply, 50);
+  });
+}
+
 input.addEventListener('input', () => {
   clearTimeout(t);
-  t = setTimeout(() => render(input.value), 80);
+  t = setTimeout(() => {
+    render(input.value);
+    syncUrlState();
+  }, 80);
 });
 buildFilters();
-const params = new URLSearchParams(location.search);
-const initial = params.get('q') || '';
-if (initial) input.value = initial;
+readUrlState();
+applyFilterButtons();
 render(input.value);
+restoreScroll();
 input.focus();
+
+window.addEventListener('pagehide', saveScroll);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveScroll();
+});
+window.addEventListener('pageshow', (ev) => {
+  if (ev.persisted) {
+    restoreScroll();
+    return;
+  }
+  // Full reload after back: URL already restored search/filters via readUrlState on boot;
+  // scroll runs after render above. Re-apply if pageshow fires after our init.
+  restoreScroll();
+});
 </script>
 
 </body>
