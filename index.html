@@ -102,10 +102,7 @@ footer a { color: var(--afd); }
   <div class="stats" id="stats"></div>
   <div class="list" id="list"></div>
   <footer>
-    Quelle der Unterzeichner: Deutscher Bundestag, Drs. 21/7570.
-    Sitz und Wahlkreise: Bundestag-Stammdaten / Abgeordnetenwatch (21.&nbsp;Wahlperiode).
-    Stand der Zuordnung: lokal erzeugte Datei mdb_wahlkreise.csv.
-    Keine PLZ-Suche (keine offizielle PLZ–Wahlkreis-Tabelle der Bundeswahlleiterin eingebunden).
+    Quelle: Deutscher Bundestag, Drs. 21/7570, sowie Abgeordneten- und Wahlkreisdaten der 21. Wahlperiode. Stand: 28.10.2026.
   </footer>
   <a class="back-btn" href="https://x.com/FrankSteppat">
     <span class="arrow">←</span>
@@ -171,7 +168,7 @@ function render(q){
     : `<span class="chip"><strong>${DATA.length}</strong> Abgeordnete</span>
        <span class="chip"><strong>${DATA.filter(r=>r.u).length}</strong> Unterzeichner Drs. 21/7570</span>`;
   if (!query) {
-    list.innerHTML = '<div class="empty">Tippe einen Namen, eine Wahlkreisnummer, einen Ort bzw. Wahlkreisnamen oder ein Bundesland-Kürzel.</div>';
+    list.innerHTML = '<div class="empty">Tippe einen Namen, eine Wahlkreisnummer, einen Ort, eine Partei oder ein Bundesland.</div>';
     return;
   }
   if (!hits.length) {
